@@ -1,0 +1,49 @@
+---
+RecipeFormatVersion: '2020-01-25'
+ComponentName: aws.greengrass.labs.telemetry.InfluxDBPublisher
+ComponentVersion: '1.0.0'
+ComponentDescription: 'A component that relays and publishes telemetry from Greengrass to InfluxDB.'
+ComponentPublisher: Amazon
+ComponentDependencies:
+    aws.greengrass.labs.database.InfluxDB:
+      VersionRequirement: "1.0.0"
+      DependencyType: HARD
+    aws.greengrass.telemetry.NucleusEmitter:
+      VersionRequirement: "1.0.1"
+      DependencyType: HARD
+ComponentConfiguration:
+  DefaultConfiguration:
+    TokenRequestTopic: 'greengrass/influxdb/token/request'
+    TokenResponseTopic: 'greengrass/influxdb/token/response'
+    accessControl:
+      aws.greengrass.ipc.pubsub:
+        aws.greengrass.labs.telemetry.InfluxDBPublisher:pubsub:1:
+          policyDescription: Allows access to subscribe to local Greengrass telemetry.
+          operations:
+            - aws.greengrass#SubscribeToTopic
+          resources:
+            - "$local/greengrass/telemetry"
+        aws.greengrass.labs.telemetry.InfluxDBPublisher:pubsub:2:
+          policyDescription: Allows access to publish to the token request topic.
+          operations:
+            - aws.greengrass#PublishToTopic
+          resources:
+            - "greengrass/influxdb/token/request"
+        aws.greengrass.labs.telemetry.InfluxDBPublisher:pubsub:3:
+          policyDescription: Allows access to subscribe to the token response topic.
+          operations:
+            - aws.greengrass#SubscribeToTopic
+          resources:
+            - "greengrass/influxdb/token/response"
+Manifests:
+  - Platform:
+      os: /darwin|linux/
+    Lifecycle:
+      Run:
+        RequiresPrivilege: false
+        script: |-
+          set -eu
+          python3 -u {artifacts:decompressedPath}/aws-greengrass-labs-telemetry-influxdbpublisher/src/influxDBTelemetryPublisher.py --publish_topic {configuration:/TokenRequestTopic} --subscribe_topic {configuration:/TokenResponseTopic}
+    Artifacts:
+    - URI: s3://aws-greengrass-labs-telemetry-influxdbpublisher.zip
+      Unarchive: ZIP
