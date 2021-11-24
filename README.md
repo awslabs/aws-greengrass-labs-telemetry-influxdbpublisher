@@ -6,7 +6,7 @@ It has a dependency on the [aws.greengrass.labs.database.InfluxDB Greengrass com
 
 At a high level, the component will do the following:
 
-1. Pull down the [Nucleus Telemetry Emitter component plugin](https://docs.aws.amazon.com/greengrass/v2/developerguide/nucleus-emitter-component.html), which publishes Greengrass System Telemetry data to the local pub/sub topic `$local/greengrass/telemetry` at a configurable rate.
+1. Pull down the [Nucleus Telemetry Emitter](https://docs.aws.amazon.com/greengrass/v2/developerguide/nucleus-emitter-component.html) component plugin, which publishes Greengrass System Telemetry data to the local pub/sub topic `$local/greengrass/telemetry` at a configurable rate.
 2. Send a request to the IPC topic `greengrass/influxdb/token/request` (configurable) to retrieve InfluxDB credentials and metadata from `aws.greengrass.labs.database.InfluxDB`
 3. Receive a message on the IPC topic `greengrass/influxdb/token/response` (configurable).
 4. Use the retrieved credentials to connect to InfluxDB.
@@ -28,7 +28,8 @@ This component works together with the `aws.greengrass.labs.database.InfluxDB` a
   
 
 * `accessControl` - [Greengrass Access Control Policy](https://docs.aws.amazon.com/greengrass/v2/developerguide/interprocess-communication.html#ipc-authorization-policies), required for InfluxDB secret retrieval over pub/sub.
-  * The default for this component allows for publish access to `greengrass/influxdb/token/request` and subscribe access to `greengrass/influxdb/token/response`
+  * A default `accessControl` policy allowing publish access to the `greengrass/influxdb/token/request` topic and subscribe access to the `greengrass/influxdb/token/response` has been included and requires no further configuration
+
 
 ## Setup
 * This component requires no additional setup, unless the request/response topics are modified in `aws.greengrass.labs.database.InfluxDB`
