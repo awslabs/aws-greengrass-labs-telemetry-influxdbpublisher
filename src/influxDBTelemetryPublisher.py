@@ -10,7 +10,7 @@ import awsiot.greengrasscoreipc
 from awsiot.greengrasscoreipc.model import (
     PublishToTopicRequest,
     PublishMessage,
-    BinaryMessage,
+    JsonMessage,
     SubscribeToTopicRequest,
     UnauthorizedError
 )
@@ -57,18 +57,17 @@ def publish_token_request(ipc_publisher_client, publish_topic) -> None:
     -------
         None
     """
+
+    request = PublishToTopicRequest()
+    request.topic = publish_topic
+    publish_message = PublishMessage()
+    publish_message.json_message = JsonMessage(message={"action": "RetrieveToken",  "accessLevel": "RW"})
+    request.publish_message = publish_message
+    publish_operation = ipc_publisher_client.new_publish_to_topic()
     try:
-        request = PublishToTopicRequest()
-        request.topic = publish_topic
-        publish_message = PublishMessage()
-        publish_message.binary_message = BinaryMessage()
-        publish_message.binary_message.message = bytes("GetInfluxDBData", "utf-8")
-        request.publish_message = publish_message
-        publish_operation = ipc_publisher_client.new_publish_to_topic()
         publish_operation.activate(request)
         futureResponse = publish_operation.get_response()
         futureResponse.result(TIMEOUT)
-
     except concurrent.futures.TimeoutError as e:
         logging.error('Timeout occurred while publishing to topic: {}'.format(publish_topic), exc_info=True)
         raise e
@@ -78,9 +77,6 @@ def publish_token_request(ipc_publisher_client, publish_topic) -> None:
     except Exception as e:
         logging.error('Exception while publishing to topic: {}'.format(publish_topic), exc_info=True)
         raise e
-    finally:
-        publish_operation.close()
-        logging.info("Closed InfluxDB parameter request publisher client")
 
 
 def retrieve_influxdb_params(publish_topic, subscribe_topic) -> str:
@@ -123,13 +119,20 @@ def retrieve_influxdb_params(publish_topic, subscribe_topic) -> str:
     retries = 0
     try:
         # Retrieve the InfluxDB parameters to connect
-        # Retry 5 times or until we retrieve parameters
-        while not handler.influxdb_parameters and retries < 5:
+        # Retry 10 times or until we retrieve parameters with RW access
+        while not handler.influxdb_parameters and retries < 10:
+            logging.info("Publish attempt {}".format(retries))
             publish_token_request(ipc_publisher_client, publish_topic)
             logging.info('Successfully published token request to topic: {}'.format(publish_topic))
             retries += 1
             logging.info('Waiting for 10 seconds...')
             time.sleep(10)
+            if handler.influxdb_parameters:
+                # This component should only accept tokens with RW access, and will reject others in case of conflict
+                if handler.influxdb_parameters['InfluxDBTokenAccessType'] != "RW":
+                    logging.warning("Discarding retrieved token with incorrect access level {}"
+                                    .format(handler.influxdb_parameters['InfluxDBTokenAccessType']))
+                    handler.influxdb_parameters = {}
     except Exception:
         logging.error("Received error while sending token publish request!", exc_info=True)
     finally:
@@ -139,6 +142,7 @@ def retrieve_influxdb_params(publish_topic, subscribe_topic) -> str:
         if not handler.influxdb_parameters:
             logging.error("Failed to retrieve InfluxDB parameters over IPC!")
             exit(1)
+        logging.info("Successfully retrieved InfluxDB metadata and token!")
 
     return handler.influxdb_parameters
 
@@ -155,11 +159,12 @@ def relay_telemetry(influxdb_parameters) -> None:
     -------
         None
     """
+
+    # Now we can subscribe to Greengrass Local Telemetry and relay it to InfluxDB using our retrieved credentials
+    telemetry_subscriber_client = awsiot.greengrasscoreipc.connect()
+    handler = streamHandlers.TelemetryStreamHandler(influxdb_parameters)
+    telemetry_operation = telemetry_subscriber_client.new_subscribe_to_topic(handler)
     try:
-        # Now we can subscribe to Greengrass Local Telemetry and relay it to InfluxDB using our retrieved credentials
-        telemetry_subscriber_client = awsiot.greengrasscoreipc.connect()
-        handler = streamHandlers.TelemetryStreamHandler(influxdb_parameters)
-        telemetry_operation = telemetry_subscriber_client.new_subscribe_to_topic(handler)
         request = SubscribeToTopicRequest()
         request.topic = telemetry_topic
         future = telemetry_operation.activate(request)
@@ -180,15 +185,13 @@ def relay_telemetry(influxdb_parameters) -> None:
 
 if __name__ == "__main__":
 
-    args = parse_arguments()
-    publish_topic = args.publish_topic
-    subscribe_topic = args.subscribe_topic
-
-    influxdb_parameters = retrieve_influxdb_params(publish_topic, subscribe_topic)
-    relay_telemetry(influxdb_parameters)
-
-    # Keep the main thread alive, or the process will exit.
     try:
+        args = parse_arguments()
+        publish_topic = args.publish_topic
+        subscribe_topic = args.subscribe_topic
+        influxdb_parameters = retrieve_influxdb_params(publish_topic, subscribe_topic)
+        relay_telemetry(influxdb_parameters)
+        # Keep the main thread alive, or the process will exit.
         while True:
             time.sleep(10)
     except InterruptedError:

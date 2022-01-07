@@ -12,9 +12,11 @@ At a high level, the component will do the following:
 4. Use the retrieved credentials to connect to InfluxDB.
 5. Set up a subscription to the `$local/greengrass/telemetry` topic and forward all telemetry messages to InfluxDB.
 
-This component works together with the `aws.greengrass.labs.database.InfluxDB` and `aws.greengrass.labs.dashboard.Grafana` components to persist and visualize Greengrass System Telemetry data.
+This component works together with the `aws.greengrass.labs.dashboard.GreengrassDashboard`<TODO>, `aws.greengrass.labs.database.InfluxDB` and `aws.greengrass.labs.dashboard.Grafana` components to persist and visualize Greengrass System Telemetry data.
+The `aws.greengrass.labs.dashboard.GreengrassDashboard` TODO component automates the setup of Grafana with InfluxDB to provide a "one-click" experience, but this component still needs to be configured first before creation. See the `Setup` section below for instructions.
 * [aws.greengrass.labs.database.InfluxDB](https://github.com/awslabs/aws-greengrass-labs-database-influxdb)
 * [aws.greengrass.labs.dashboard.Grafana](https://github.com/awslabs/aws-greengrass-labs-dashboard-grafana)
+* `aws.greengrass.labs.dashboard.GreengrassDashboard` TODO
 
 ## Configuration
 * `TokenRequestTopic`- the topic to send a request to in order to retrieve InfluxDB credentials
@@ -32,7 +34,7 @@ This component works together with the `aws.greengrass.labs.database.InfluxDB` a
 
 
 ## Setup
-* This component requires no additional setup, unless the request/response topics are modified in `aws.greengrass.labs.database.InfluxDB`
+* This component requires no additional configuration, unless the request/response topics are modified in `aws.greengrass.labs.database.InfluxDB`
 * When deployed, this component will automatically begin forwarding telemetry from the [Nucleus Telemetry Emitter component plugin](https://docs.aws.amazon.com/greengrass/v2/developerguide/nucleus-emitter-component.html).
   * Since the default publish interval for the Nucleus Telemetry Emitter is 60 seconds, you may want to configure that component during deployment to have a lower publish interval with a configuration update similar to the following (which sets it to 5 seconds). Note that smaller publish intervals may result in higher CPU usage on your device.
     ```
@@ -40,6 +42,24 @@ This component works together with the `aws.greengrass.labs.database.InfluxDB` a
     "telemetryPublishIntervalMs": "5000"
     }
     ```
+
+### Prerequisites
+1. Setup the GDK CLI, Greengrass, and `aws.greengrass.labs.database.InfluxDB` using [the instructions here](https://github.com/awslabs/aws-greengrass-labs-database-influxdb/blob/main/README.md#setup).
+
+### Component Setup
+2. Pull down the component in a new directory using the [GDK CLI](https://docs.aws.amazon.com/greengrass/v2/developerguide/install-greengrass-development-kit-cli.html).
+    ```
+   mkdir aws-greengrass-labs-telemetry-influxdbpublisher; cd aws-greengrass-labs-telemetry-influxdbpublisher
+   gdk component init --repository aws-greengrass-labs-telemetry-influxdbpublisher
+   ```
+3. Use the [GDK CLI](https://docs.aws.amazon.com/greengrass/v2/developerguide/greengrass-development-kit-cli.html) to build the component to prepare for publishing.
+   ```
+   gdk component build
+   ```
+4. Use the [GDK CLI](https://docs.aws.amazon.com/greengrass/v2/developerguide/greengrass-development-kit-cli.html) to create a private component.
+   ```
+   gdk component publish
+   ```
     
 ## Sending Custom Telemetry
 * This component listens to all telemetry on the `$local/greengrass/telemetry` topic and forwards it to InfluxDB.
