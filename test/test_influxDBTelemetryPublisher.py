@@ -52,3 +52,17 @@ def test_retrieve_influxdb_params(InfluxDBDataStreamHandler, mocker):
     import src.influxDBTelemetryPublisher as publisher
     params = publisher.retrieve_influxdb_params("test/topic", "test/topic")
     assert json.loads(params) == testparams
+
+
+@patch('streamHandlers.InfluxDBDataStreamHandler')
+def test_fail_to_retrieve_influxdb_params(InfluxDBDataStreamHandler, mocker):
+
+    mocker.patch("awsiot.greengrasscoreipc.connect")
+    handler = InfluxDBDataStreamHandler()
+    handler.influxdb_parameters = None
+    import src.influxDBTelemetryPublisher as publisher
+    mocker.patch("src.influxDBTelemetryPublisher.publish_token_request", side_effect=ValueError("test"))
+    with pytest.raises(SystemExit) as e:
+        publisher.retrieve_influxdb_params("test/topic", "test/topic")
+        assert e.type == SystemExit
+        assert e.value.code == 1

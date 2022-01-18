@@ -12,9 +12,11 @@ At a high level, the component will do the following:
 4. Use the retrieved credentials to connect to InfluxDB.
 5. Set up a subscription to the `$local/greengrass/telemetry` topic and forward all telemetry messages to InfluxDB.
 
-This component works together with the `aws.greengrass.labs.database.InfluxDB` and `aws.greengrass.labs.dashboard.Grafana` components to persist and visualize Greengrass System Telemetry data.
+This component works together with the `aws.greengrass.labs.dashboard.GreengrassDashboard`<TODO>, `aws.greengrass.labs.database.InfluxDB` and `aws.greengrass.labs.dashboard.Grafana` components to persist and visualize Greengrass System Telemetry data.
+The `aws.greengrass.labs.dashboard.GreengrassDashboard` TODO component automates the setup of Grafana with InfluxDB to provide a "one-click" experience, but this component still needs to be configured first before creation. See the `Setup` section below for instructions.
 * [aws.greengrass.labs.database.InfluxDB](https://github.com/awslabs/aws-greengrass-labs-database-influxdb)
 * [aws.greengrass.labs.dashboard.Grafana](https://github.com/awslabs/aws-greengrass-labs-dashboard-grafana)
+* `aws.greengrass.labs.dashboard.GreengrassDashboard` TODO
 
 ## Configuration
 * `TokenRequestTopic`- the topic to send a request to in order to retrieve InfluxDB credentials

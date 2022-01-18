@@ -8,6 +8,7 @@ from unittest.mock import patch, ANY
 import src.streamHandlers as streamHandler
 
 from awsiot.greengrasscoreipc.model import (
+    JsonMessage,
     BinaryMessage,
     SubscriptionResponseMessage
 )
@@ -20,17 +21,18 @@ testparams = {
     'InfluxDBBucket': 'greengrass-telemetry',
     'InfluxDBPort': '8086',
     'InfluxDBInterface': '127.0.0.1',
-    'InfluxDBRWToken': 'vb53ZyYlxJjAeWcDbgPjbNvkvdD95b2hCrt0CoaZyEL5QYBiQfLw3TbgqgDozj74_aZ9pYCwVJM6Vj5quLAfSA==',
+    'InfluxDBToken': 'vb53ZyYlxJjAeWcDbgPjbNvkvdD95b2hCrt0CoaZyEL5QYBiQfLw3TbgqgDozj74_aZ9pYCwVJM6Vj5quLAfSA==',
     'InfluxDBServerProtocol': 'https',
-    'InfluxDBSkipTLSVerify': 'true'
+    'InfluxDBSkipTLSVerify': 'true',
+    'InfluxDBTokenAccessType': 'RW'
 }
 
 
 def test_validInfluxDBParams(mocker):
 
     handler = streamHandler.InfluxDBDataStreamHandler()
-    binary_message = BinaryMessage(message=str.encode(json.dumps(testparams)))
-    response_message = SubscriptionResponseMessage(binary_message=binary_message)
+    message = JsonMessage(message=testparams)
+    response_message = SubscriptionResponseMessage(json_message=message)
     handler.on_stream_event(response_message)
     assert handler.influxdb_parameters == testparams
 
@@ -41,8 +43,8 @@ def test_invalidInfluxDBParams(mocker):
     emptyparams = {}
 
     handler = streamHandler.InfluxDBDataStreamHandler()
-    binary_message = BinaryMessage(message=str.encode(json.dumps(emptyparams)))
-    response_message = SubscriptionResponseMessage(binary_message=binary_message)
+    message = JsonMessage(message=emptyparams)
+    response_message = SubscriptionResponseMessage(json_message=message)
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         handler.on_stream_event(response_message)
         assert pytest_wrapped_e.type == SystemExit

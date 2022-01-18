@@ -31,9 +31,8 @@ class InfluxDBDataStreamHandler(client.SubscribeToTopicStreamHandler):
             None
         """
         try:
-            message = str(event.binary_message.message, "utf-8")
-            self.influxdb_parameters = json.loads(message)
-            if (len(self.influxdb_parameters) == 0):
+            self.influxdb_parameters = event.json_message.message
+            if len(self.influxdb_parameters) == 0:
                 raise ValueError("Retrieved Influxdb parameters are empty!")
         except Exception:
             logging.error('Failed to load telemetry event JSON!', exc_info=True)
@@ -87,7 +86,7 @@ class TelemetryStreamHandler(client.SubscribeToTopicStreamHandler):
                 self.influxdb_parameters['InfluxDBInterface'],
                 self.influxdb_parameters['InfluxDBPort']
             ),
-            token=self.influxdb_parameters['InfluxDBRWToken'],
+            token=self.influxdb_parameters['InfluxDBToken'],
             org=self.influxdb_parameters['InfluxDBOrg'],
             verify_ssl=ssl_verify
         )
