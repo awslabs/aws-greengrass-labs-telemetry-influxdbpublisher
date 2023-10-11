@@ -31,9 +31,16 @@ class InfluxDBDataStreamHandler(client.SubscribeToTopicStreamHandler):
             None
         """
         try:
-            self.influxdb_parameters = event.json_message.message
-            if len(self.influxdb_parameters) == 0:
+            p = event.json_message.message
+            if len(p) == 0:
                 raise ValueError("Retrieved Influxdb parameters are empty!")
+            # accept only tokens with RW access; reject all others
+            if p['InfluxDBTokenAccessType'] != 'RW':
+                logging.warning("Discarding retrieved token with incorrect access level {}"
+                                .format(p['InfluxDBTokenAccessType']))
+            else:
+                self.influxdb_parameters = p
+
         except Exception:
             logging.error('Failed to load telemetry event JSON!', exc_info=True)
             exit(1)

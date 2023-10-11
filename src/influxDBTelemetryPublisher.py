@@ -118,21 +118,14 @@ def retrieve_influxdb_params(publish_topic, subscribe_topic) -> str:
     ipc_publisher_client = awsiot.greengrasscoreipc.connect()
     retries = 0
     try:
-        # Retrieve the InfluxDB parameters to connect
-        # Retry 10 times or until we retrieve parameters with RW access
+        # Retrieve InfluDB parameters to connect; retry up to 10 times
         while not handler.influxdb_parameters and retries < 10:
             logging.info("Publish attempt {}".format(retries))
             publish_token_request(ipc_publisher_client, publish_topic)
             logging.info('Successfully published token request to topic: {}'.format(publish_topic))
             retries += 1
-            logging.info('Waiting for 10 seconds...')
-            time.sleep(10)
-            if handler.influxdb_parameters:
-                # This component should only accept tokens with RW access, and will reject others in case of conflict
-                if handler.influxdb_parameters['InfluxDBTokenAccessType'] != "RW":
-                    logging.warning("Discarding retrieved token with incorrect access level {}"
-                                    .format(handler.influxdb_parameters['InfluxDBTokenAccessType']))
-                    handler.influxdb_parameters = {}
+            time.sleep(2)
+
     except Exception:
         logging.error("Received error while sending token publish request!", exc_info=True)
     finally:
