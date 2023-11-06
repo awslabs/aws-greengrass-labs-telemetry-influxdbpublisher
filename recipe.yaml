@@ -1,12 +1,12 @@
 ---
 RecipeFormatVersion: '2020-01-25'
 ComponentName: aws.greengrass.labs.telemetry.InfluxDBPublisher
-ComponentVersion: '2.0.0'
+ComponentVersion: '2.1.0'
 ComponentDescription: 'A component that relays and publishes telemetry from Greengrass to InfluxDB.'
 ComponentPublisher: Amazon
 ComponentDependencies:
     aws.greengrass.labs.database.InfluxDB:
-      VersionRequirement: "~2.0.0"
+      VersionRequirement: "~2.1.0"
       DependencyType: HARD
     aws.greengrass.telemetry.NucleusEmitter:
       VersionRequirement: "1.0.1"

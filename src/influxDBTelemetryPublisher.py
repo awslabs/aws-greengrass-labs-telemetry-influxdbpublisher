@@ -61,7 +61,7 @@ def publish_token_request(ipc_publisher_client, publish_topic) -> None:
     request = PublishToTopicRequest()
     request.topic = publish_topic
     publish_message = PublishMessage()
-    publish_message.json_message = JsonMessage(message={"action": "RetrieveToken",  "accessLevel": "RW"})
+    publish_message.json_message = JsonMessage(message={"action": "RetrieveToken",  "accessLevel": "RW", 'request_id': streamHandlers.REQUEST_ID})
     request.publish_message = publish_message
     publish_operation = ipc_publisher_client.new_publish_to_topic()
     try:

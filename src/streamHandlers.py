@@ -12,6 +12,7 @@ from awsiot.greengrasscoreipc.model import (
     SubscriptionResponseMessage
 )
 
+REQUEST_ID = 'aws-greengrass-labs-telemetry-influxdbpublisher'
 
 class InfluxDBDataStreamHandler(client.SubscribeToTopicStreamHandler):
     def __init__(self):
@@ -31,9 +32,11 @@ class InfluxDBDataStreamHandler(client.SubscribeToTopicStreamHandler):
             None
         """
         try:
-            self.influxdb_parameters = event.json_message.message
-            if len(self.influxdb_parameters) == 0:
-                raise ValueError("Retrieved Influxdb parameters are empty!")
+            if ('request_id' in event.json_message.message):
+                if event.json_message.message['request_id'] == REQUEST_ID:
+                    self.influxdb_parameters = event.json_message.message
+                    if len(self.influxdb_parameters) == 0:
+                        raise ValueError("Retrieved Influxdb parameters are empty!")
         except Exception:
             logging.error('Failed to load telemetry event JSON!', exc_info=True)
             exit(1)
